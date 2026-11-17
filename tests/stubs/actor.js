@@ -150,6 +150,10 @@ export class Actor extends Emitter {
         return [...this.__children];
     }
 
+    get_n_children() {
+        return this.__children.length;
+    }
+
     destroy_all_children() {
         for (const c of [...this.__children])
             c.destroy();

@@ -2,10 +2,18 @@
 
 import {Actor} from '../actor.js';
 
+export const Ornament = {NONE: 0, DOT: 1, CHECK: 2, HIDDEN: 3, NO_DOT: 4};
+
 export class PopupBaseMenuItem extends Actor {
     /** @param {Record<string, any>} [params] */
     constructor(params = {}) {
         super({reactive: true, can_focus: true, ...params});
+        this.__ornament = Ornament.NONE;
+    }
+
+    /** @param {number} ornament */
+    setOrnament(ornament) {
+        this.__ornament = ornament;
     }
 }
 
@@ -111,6 +119,6 @@ export class PopupSubMenuMenuItem extends PopupBaseMenuItem {
 }
 
 export default {
-    PopupBaseMenuItem, PopupMenuItem, PopupImageMenuItem, PopupSeparatorMenuItem,
+    Ornament, PopupBaseMenuItem, PopupMenuItem, PopupImageMenuItem, PopupSeparatorMenuItem,
     PopupMenuSection, PopupMenu, PopupSubMenuMenuItem,
 };

@@ -3,7 +3,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 
-import {relativeLuminance, styleVariant} from '../lib/theme.js';
+import {relativeLuminance, styleVariant, verticalBoxParams} from '../lib/theme.js';
 
 /** @param {number} red @param {number} green @param {number} blue */
 function rgb(red, green, blue) {
@@ -31,4 +31,13 @@ test('the shell stylesheets are recognised by the text colour they set', () => {
     assert.equal(styleVariant(rgb(0x22, 0x22, 0x26)), 'light');
     assert.equal(styleVariant(rgb(0xff, 0xff, 0xff)), 'dark');
     assert.equal(styleVariant(rgb(0, 0, 0)), 'light');
+});
+
+test('a vertical box uses orientation from 48 and the old property before', () => {
+    const VERTICAL = 1;
+    // 51 removed the property outright: "No property vertical on StBoxLayout".
+    assert.deepEqual(verticalBoxParams('51.1', VERTICAL), {orientation: VERTICAL});
+    assert.deepEqual(verticalBoxParams('48.rc', VERTICAL), {orientation: VERTICAL});
+    assert.deepEqual(verticalBoxParams('47.4', VERTICAL), {vertical: true});
+    assert.deepEqual(verticalBoxParams('45.0', VERTICAL), {vertical: true});
 });

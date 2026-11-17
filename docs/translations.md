@@ -34,7 +34,7 @@ Three rules had exactly that bug: `.kube-caret`, `.kube-context-icon` and `.kube
 - **Both gi-free modules rendering through the real shell.** A headless GNOME 50 with an isolated dconf store and a deliberately broken `kubectl-path` logged `poll: failed … reason=У kubectl виникла помилка` and `alert: posting banner title=kubectl ist auf ein Problem gestoßen`. Set `XDG_CONFIG_HOME` **before** `dbus-run-session`, so the activated dconf service inherits it. Setting it inside the script leaks writes to the real store.
 - **Plural selection against the compiled `.mo`**, driving the pure modules under standalone `gjs`: uk exercises all three forms, ar all six.
 - **The preferences window built end-to-end in a real Adw process** for uk, de, ar and ja.
-- **GNOME 45 compatibility.** `ExtensionBase` was checked against upstream and carries the same three instance methods and the same `initTranslations`, so the binding works across 45 to 50.
+- **GNOME 45 compatibility.** `ExtensionBase` was checked against upstream and carries the same three instance methods and the same `initTranslations`, so the binding works across 45 to 51.
 - **A real RTL locale.** `ar_EG` built with `localedef` into a `LOCPATH`, since the machine has none. GTK reports `TextDirection.RTL`, and the extension still reaches the shell and logs Arabic with the direction-split stylesheet in place.
 
 ## What is not verified

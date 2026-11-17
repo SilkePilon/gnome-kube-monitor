@@ -7,6 +7,7 @@ import St from 'gi://St';
 import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import {KubeIndicator} from '../lib/indicator.js';
 import {NodeLevel} from '../lib/model.js';
@@ -270,7 +271,21 @@ test('a down node says so in text, not just with a red dot', () => {
     }));
     const row = menuOf(indicator).__itemTexts().join(' ');
     assert.match(row, /NotReady/, 'the only textual signal that the node is down');
-    assert.match(row, /↓ 3m/);
+    assert.match(row, /down 3m/);
+    const r = indicator._nodeRows.get('n1');
+    assert.ok(r.durationLabel.has_style_class_name('kube-text-error'), 'downtime is coloured');
+    assert.ok(r.qualLabel.has_style_class_name('kube-text-error'), 'and so is the reason');
+    assert.ok(r.dot.has_style_class_name('kube-dot-error'));
+});
+
+test('a healthy row keeps its role and uptime in the dim secondary colour', () => {
+    const {indicator} = makeIndicator();
+    indicator.update(detailState());
+    const r = indicator._nodeRows.get('n1');
+    assert.equal(r.qualLabel.text, 'worker');
+    assert.equal(r.durationLabel.text, 'up 3d');
+    assert.ok(!classesUnder(r.item).some(c => c.startsWith('kube-text-')), 'nothing to flag');
+    assert.ok(r.dot.has_style_class_name('kube-dot-ok'));
 });
 
 test('each node row carries a spoken summary including its meters', () => {
@@ -354,34 +369,43 @@ test('an empty cluster says so', () => {
     assert.match(menuOf(indicator).__itemTexts().join(' '), /No nodes/);
 });
 
-test('meters appear only with metrics, and colour by load', () => {
+test('load appears only with metrics, after the role, and colours past 70%', () => {
     const {indicator} = makeIndicator();
     indicator.update(detailState({nodes: [node({name: 'a'})]}));
     let row = indicator._nodeRows.get('a');
-    assert.equal(row.meters.visible, false, 'no metrics-server -> no meters');
+    assert.equal(row.cpuLabel.visible, false, 'no metrics-server -> no load');
+    assert.equal(row.memLabel.visible, false);
 
     indicator.update(detailState({nodes: [node({name: 'a', cpuPct: 10, memPct: 95})]}));
     row = indicator._nodeRows.get('a');
-    assert.equal(row.meters.visible, true);
-    assert.equal(row.cpu.value.text, '10%');
-    assert.ok(row.cpu.fill.__classes.includes('kube-meter-ok'));
-    assert.ok(row.mem.fill.__classes.includes('kube-meter-error'), '95% is critical');
-    assert.match(row.cpu.fill.get_style(), /width: \d+px/);
+    assert.equal(row.cpuLabel.text, ' · CPU 10%');
+    assert.equal(row.memLabel.text, ' · MEM 95%');
+    assert.ok(!row.cpuLabel.__classes.some(c => c.startsWith('kube-text-')), '10% is unremarkable');
+    assert.ok(row.memLabel.has_style_class_name('kube-text-error'), '95% is critical');
+
+    indicator.update(detailState({nodes: [node({name: 'a', cpuPct: 75, memPct: 20})]}));
+    row = indicator._nodeRows.get('a');
+    assert.ok(row.cpuLabel.has_style_class_name('kube-text-warning'));
+    assert.ok(!row.memLabel.has_style_class_name('kube-text-error'), 'a level class is swapped out');
 
     // Only one of the two present: the other stays hidden.
     indicator.update(detailState({nodes: [node({name: 'a', cpuPct: 50, memPct: null})]}));
     row = indicator._nodeRows.get('a');
-    assert.equal(row.cpu.box.visible, true);
-    assert.equal(row.mem.box.visible, false);
+    assert.equal(row.cpuLabel.visible, true);
+    assert.equal(row.memLabel.visible, false);
 });
 
-test('meter width is clamped, so a bogus percentage cannot draw outside the track', () => {
+test('the separator only goes between parts that are there', () => {
     const {indicator} = makeIndicator();
-    indicator.update(detailState({nodes: [node({name: 'a', cpuPct: 500, memPct: -20})]}));
-    const row = indicator._nodeRows.get('a');
-    const width = s => Number(/width: (\d+)px/.exec(s)?.[1]);
-    assert.ok(width(row.cpu.fill.get_style()) <= 64, row.cpu.fill.get_style());
-    assert.ok(width(row.mem.fill.get_style()) >= 2, 'a floor keeps the fill visible');
+    // No qualifier (a Ready node with no roles): the load leads the line.
+    indicator.update(detailState({nodes: [node({name: 'a', roles: [], cpuPct: 5, memPct: 6})]}));
+    let row = indicator._nodeRows.get('a');
+    assert.equal(row.cpuLabel.text, 'CPU 5%');
+    assert.equal(row.memLabel.text, ' · MEM 6%');
+
+    indicator.update(detailState({nodes: [node({name: 'a', roles: [], cpuPct: null, memPct: 6})]}));
+    row = indicator._nodeRows.get('a');
+    assert.equal(row.memLabel.text, 'MEM 6%');
 });
 
 test('the pods summary shows only the states that are non-zero', () => {
@@ -390,22 +414,24 @@ test('the pods summary shows only the states that are non-zero', () => {
         pods: {total: 10, running: 8, pending: 0, failed: 0, succeeded: 2, crashloop: 0},
     }));
     let texts = menuOf(indicator).__itemTexts().join(' | ');
-    assert.match(texts, /8 running/);
+    assert.match(texts, /8 pods running/);
     assert.ok(!texts.includes('pending'), 'zero counts stay hidden');
 
     indicator.update(detailState({
         pods: {total: 10, running: 5, pending: 2, failed: 1, succeeded: 0, crashloop: 3},
     }));
     texts = menuOf(indicator).__itemTexts().join(' | ');
-    for (const expected of [/5 running/, /2 pending/, /3 crashing/, /1 failed/])
+    for (const expected of [/5 pods running/, /· 2 pending/, /· 3 crashing/, /· 1 failed/])
         assert.match(texts, expected);
+    const labels = indicator._podsBox.get_children();
+    assert.ok(labels[1].has_style_class_name('kube-text-warning'), 'pending is a warning');
+    assert.ok(labels[2].has_style_class_name('kube-text-error'), 'crashing is an error');
 });
 
 test('the pods row hides itself when there is no pod data', () => {
     const {indicator} = makeIndicator();
     indicator.update(detailState({pods: null}));
     assert.equal(indicator._podsItem.visible, false);
-    assert.equal(indicator._podsSeparator.visible, false);
 });
 
 test('the health tier leaves the node list alone', () => {
@@ -420,99 +446,98 @@ test('the health tier leaves the node list alone', () => {
     assert.equal(indicator._nodeRows.size, 1, 'rows survive a health-tier update');
 });
 
-test('the context list marks the current one for both eye and reader', () => {
+/** @param {any} indicator */
+const contextRows = indicator => indicator._contextMenu.menu.__items;
+
+test('the context submenu checks the current one', () => {
     const {indicator} = makeIndicator();
     indicator.setContexts(['dev', 'prod'], 'prod');
-    const rows = indicator._contextList.get_children();
+    const rows = contextRows(indicator);
     const prod = rows.find(r => r.__allText().includes('prod'));
     const dev = rows.find(r => r.__allText().includes('dev'));
-    assert.equal(prod.accessible_name, 'prod, current');
-    assert.equal(dev.accessible_name, 'dev', 'opacity alone would say nothing to a reader');
-    // The checkmark column stays laid out either way.
-    assert.equal(prod.get_children()[0].get_children()[0].opacity, 255);
-    assert.equal(dev.get_children()[0].get_children()[0].opacity, 0);
+    // The shell's CHECK ornament also sets the CHECKED accessible state.
+    assert.equal(prod.__ornament, PopupMenu.Ornament.CHECK);
+    assert.equal(dev.__ornament, PopupMenu.Ornament.NONE, 'NONE keeps the column aligned');
 });
 
-test('the context list is reactive but not activatable, so the theme cannot grey it out', () => {
-    // St ties :insensitive to an actor's reactivity, and the theme paints
-    // .popup-inactive-menu-item:insensitive grey, which the container passes down
-    // to the live buttons inside it. reactive:true keeps the theme's foreground.
+test('re-listing contexts replaces the rows rather than appending', () => {
     const {indicator} = makeIndicator();
-    const item = indicator._contextItem;
-    assert.equal(item.reactive, true, 'reactive:false is what marks it insensitive');
-    assert.equal(item.activate, false, 'but it must not become an activatable menu item');
-    assert.equal(item.hover, false, 'nor take the hover highlight of one');
-    assert.equal(item.can_focus, false, 'the rows inside it are the focusable things');
+    indicator.setContexts(['dev', 'prod'], 'prod');
+    indicator.setContexts(['dev'], 'dev');
+    assert.deepEqual(contextRows(indicator).map(r => r.__allText().join(' ')),
+        ['dev', 'Add Connection…']);
 });
 
-test('the rows highlight on hover but the block around them never does', () => {
-    const {indicator} = makeIndicator();
-    // PopupBaseMenuItem derives track_hover from reactive, which would paint the
-    // theme's hover fill across the whole block. Rows highlight themselves.
-    assert.equal(indicator._contextItem.track_hover, false,
-        'the list container must never take a hover highlight of its own');
-    // The rows are St.Buttons; .kube-context-row:hover is what makes that visible.
-    indicator.setContexts(['a', 'b'], 'a');
-    for (const row of indicator._contextList.get_children())
-        assert.equal(row.track_hover ?? true, true, 'every row must respond to the pointer');
-});
-
-test('the context list always offers a way into preferences', () => {
+test('the context submenu always offers a way into preferences', () => {
     const {indicator, prefsOpened} = makeIndicator();
     indicator.setContexts([], '');
-    const texts = indicator._contextList.get_children().map(c => c.__allText().join(' '));
+    const texts = contextRows(indicator).map(c => c.__allText().join(' '));
     assert.ok(texts.some(t => /No contexts/.test(t)));
-    const add = indicator._contextList.get_children().find(c => /Add connection/.test(c.__allText().join(' ')));
-    add.emit('clicked');
+    const add = contextRows(indicator).find(c => /Add Connection/.test(c.__allText().join(' ')));
+    assert.equal(add.__ornament, PopupMenu.Ornament.NONE, 'lines up with the context names');
+    add.emit('activate');
     assert.equal(prefsOpened(), 1);
 });
 
-test('selecting a context emits it, collapses the list and shows a loading state', () => {
+test('selecting a context emits it and shows a loading state', () => {
     const {indicator} = makeIndicator();
     /** @type {string[]} */
     const picked = [];
     indicator.connect('context-selected', (_i, ctx) => picked.push(ctx));
     indicator.update(detailState({nodes: [node({name: 'a'})]}));
     indicator.setContexts(['dev', 'prod'], 'dev');
-    indicator._setContextsExpanded(true);
 
-    const prod = indicator._contextList.get_children()
-        .find(r => r.__allText().includes('prod'));
-    prod.emit('clicked');
+    const prod = contextRows(indicator).find(r => r.__allText().includes('prod'));
+    prod.emit('activate');
 
     assert.deepEqual(picked, ['prod']);
-    assert.equal(indicator._contextsExpanded, false, 'the list closes after a pick');
     assert.equal(indicator._titleLabel.text, 'prod', 'instant feedback before the poll lands');
+    assert.equal(indicator._subtitleLabel.text, 'Loading…');
+    assert.ok(indicator._statusIcon.has_style_class_name('kube-status-unknown'));
     assert.equal(indicator._nodeRows.size, 0, 'stale rows are cleared');
-    assert.match(menuOf(indicator).__itemTexts().join(' '), /Loading…/);
 });
 
-test('the switcher announces whether it is expanded', () => {
+test('the header is reactive but not activatable, so the theme cannot grey it out', () => {
+    // St ties :insensitive to an actor's reactivity, and the theme paints
+    // .popup-inactive-menu-item:insensitive grey, which the item passes down to
+    // the title and the live refresh button inside it.
     const {indicator} = makeIndicator();
-    indicator.update(detailState({context: 'prod'}));
-    indicator._contextButton.emit('clicked');
-    assert.equal(indicator._contextsExpanded, true);
-    assert.match(indicator._contextButton.accessible_name, /prod, expanded, cluster switcher/);
-    assert.equal(indicator._contextItem.visible, true);
-    assert.equal(indicator._caret.icon_name, 'pan-down-symbolic');
-
-    indicator._contextButton.emit('clicked');
-    assert.match(indicator._contextButton.accessible_name, /collapsed/);
-    assert.equal(indicator._caret.icon_name, 'pan-end-symbolic');
+    const header = menuOf(indicator).__items[0];
+    assert.equal(header.reactive, true, 'reactive:false is what marks it insensitive');
+    assert.equal(header.activate, false, 'but it must not become an activatable menu item');
+    assert.equal(header.hover, false, 'nor take the hover highlight of one');
+    assert.equal(header.track_hover, false, 'the refresh button highlights, not the block');
 });
 
-test('closing the menu collapses the switcher and reports open state', () => {
+test('the header subtitle counts Ready nodes, or says why it cannot', () => {
+    const {indicator} = makeIndicator();
+    indicator.update(detailState({readyCount: 2, total: 3,
+        nodes: [node({name: 'a'}), node({name: 'b'}), node({name: 'c'})]}));
+    assert.equal(indicator._subtitleLabel.text, '2 of 3 nodes ready');
+    indicator.update(detailState({readyCount: 1, total: 1}));
+    assert.equal(indicator._subtitleLabel.text, '1 of 1 node ready', 'plural follows the total');
+    indicator.update(detailState({error: {key: 'tls', title: 'Bad cert', detail: ''}}));
+    assert.equal(indicator._subtitleLabel.text, 'Bad cert');
+});
+
+test('the header status icon follows the cluster level', () => {
+    const {indicator} = makeIndicator();
+    assert.ok(indicator._statusIcon.has_style_class_name('kube-status-unknown'));
+    indicator.update(detailState({level: NodeLevel.WARNING}));
+    assert.ok(indicator._statusIcon.has_style_class_name('kube-status-warning'));
+    assert.ok(!indicator._statusIcon.has_style_class_name('kube-status-unknown'));
+});
+
+test('opening and closing the menu reports open state', () => {
     const {indicator} = makeIndicator();
     /** @type {boolean[]} */
     const openStates = [];
     indicator.connect('menu-open-changed', (_i, open) => openStates.push(open));
-    indicator._setContextsExpanded(true);
 
     menuOf(indicator).__setOpen(true);
     assert.deepEqual(openStates, [true]);
     menuOf(indicator).__setOpen(false);
     assert.deepEqual(openStates, [true, false]);
-    assert.equal(indicator._contextsExpanded, false);
 });
 
 test('the refresh button is reachable by keyboard, named, and emits a refresh', () => {
@@ -556,7 +581,7 @@ test('the mute submenu offers durations and reports them in seconds', () => {
     indicator.connect('snooze-requested', (_i, secs) => snoozes.push(secs));
     const rows = indicator._muteItem.menu.__items;
     const labelled = rows.map(r => r.__allText().join(' '));
-    assert.deepEqual(labelled, ['For 15 minutes', 'For 1 hour', 'For 8 hours', 'Turn muting off']);
+    assert.deepEqual(labelled, ['For 15 Minutes', 'For 1 Hour', 'For 8 Hours', 'Turn Muting Off']);
 
     for (const r of rows)
         r.emit('activate');
@@ -565,22 +590,22 @@ test('the mute submenu offers durations and reports them in seconds', () => {
 
 test('the mute label shows the time remaining and hides "off" when not muted', () => {
     const {indicator} = makeIndicator();
-    assert.equal(indicator._muteItem.label.text, 'Mute alerts');
+    assert.equal(indicator._muteItem.label.text, 'Mute Alerts');
     assert.equal(indicator._unmuteItem.visible, false);
 
     indicator.setSnoozeUntil(Date.now() + 20 * 60 * 1000);
-    assert.match(indicator._muteItem.label.text, /Muted · 20m left/);
+    assert.match(indicator._muteItem.label.text, /Muted · 20m Left/);
     assert.equal(indicator._unmuteItem.visible, true);
 
     indicator.setSnoozeUntil(Date.now() + 3 * 60 * 60 * 1000);
-    assert.match(indicator._muteItem.label.text, /Muted · 3h left/);
+    assert.match(indicator._muteItem.label.text, /Muted · 3h Left/);
 
     indicator.setSnoozeUntil(Date.now() - 1000);        // already expired
-    assert.equal(indicator._muteItem.label.text, 'Mute alerts');
+    assert.equal(indicator._muteItem.label.text, 'Mute Alerts');
     assert.equal(indicator._unmuteItem.visible, false);
 
     indicator.setSnoozeUntil(0);
-    assert.equal(indicator._muteItem.label.text, 'Mute alerts');
+    assert.equal(indicator._muteItem.label.text, 'Mute Alerts');
 });
 
 test('the mute label refreshes when the menu opens', () => {

@@ -51,8 +51,7 @@ test('every :ltr rule has an :rtl counterpart, and the other way round', () => {
 test('every row a pointer can land on still says so', () => {
     // A fill spanning a whole block marks nothing, so only the rows highlight;
     // deleting a per-row fill leaves that control with no mouse affordance.
-    for (const selector of ['.kube-context-row:hover', '.kube-context-button:hover',
-        '.kube-icon-button:hover']) {
+    for (const selector of ['.kube-icon-button:hover']) {
         const rule = rules().find(r => r.selector === selector);
         assert.ok(rule, `${selector} is missing, so that control would be silent under the pointer`);
         assert.match(rule.body, /background-color:/);
@@ -75,6 +74,10 @@ function hasHue(body) {
     return false;
 }
 
+// A filled circle with its own foreground carries its contrast with it, so it
+// reads the same on either surface. These are libadwaita's bg/fg pairs.
+const SELF_CONTAINED = new Set(['.kube-status-ok', '.kube-status-warning', '.kube-status-error']);
+
 test('every hue and every dimmed row is declared for light surfaces too', () => {
     // The dark palette was picked against #36363a: on #fafafb its greens reach
     // 1.6:1, and a dimmed grey inverts outright. Both need a twin.
@@ -88,22 +91,13 @@ test('every hue and every dimmed row is declared for light surfaces too', () => 
         if (!hasHue(rule.body) && !/(?:^|[\s;])color\s*:/.test(rule.body))
             continue;
         for (const cls of rule.selector.match(/\.kube-[a-z-]+/g) ?? []) {
-            if (!scoped.has(cls))
+            if (!scoped.has(cls) && !SELF_CONTAINED.has(cls))
                 missing.add(cls);
         }
     }
     assert.deepEqual([...missing], [],
         'these would keep their dark-surface value under GNOME\'s Light style; ' +
         'add a `.kube-light` rule with a value measured against #fafafb');
-});
-
-test('the meter track width still matches METER_WIDTH in indicator.js', () => {
-    // A constant duplicated across a file the tests execute and one they do not.
-    const css = /\.kube-meter-track\s*\{[^}]*width:\s*(\d+)px/.exec(CSS);
-    const js = /const METER_WIDTH = (\d+);/
-        .exec(readFileSync(join(ROOT, 'lib', 'indicator.js'), 'utf8'));
-    assert.ok(css && js, 'both declarations must be findable');
-    assert.equal(css[1], js[1]);
 });
 
 // Adwaita and gtk4's built-in gresource are the only icon sources an extension
@@ -114,10 +108,9 @@ const ICONS = new Set([
     'content-loading-symbolic',
     'dialog-warning-symbolic',
     'list-add-symbolic',
+    'network-server-symbolic',
     'notifications-disabled-symbolic',
     'object-select-symbolic',
-    'pan-down-symbolic',
-    'pan-end-symbolic',
     'preferences-system-symbolic',
     'user-trash-symbolic',
     'view-refresh-symbolic',

@@ -10,7 +10,7 @@
   <a href="https://github.com/cerobreath/gnome-kube-monitor/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/cerobreath/gnome-kube-monitor/ci.yml?branch=main&style=flat-square&label=CI&labelColor=1B1119&color=007C3D" alt="CI"></a>
   <img src="https://img.shields.io/badge/coverage-100%25-007C3D?style=flat-square&labelColor=1B1119" alt="100% test coverage">
   <a href="https://github.com/cerobreath/gnome-kube-monitor/releases/latest"><img src="https://img.shields.io/github/v/release/cerobreath/gnome-kube-monitor?style=flat-square&label=release&labelColor=1B1119&color=C8394C" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/GNOME_Shell-45--50-A82740?style=flat-square&labelColor=1B1119" alt="GNOME Shell 45 to 50">
+  <img src="https://img.shields.io/badge/GNOME_Shell-45--51-A82740?style=flat-square&labelColor=1B1119" alt="GNOME Shell 45 to 51">
   <a href="COPYING"><img src="https://img.shields.io/badge/license-GPL--2.0--or--later-6B1E45?style=flat-square&labelColor=1B1119" alt="GPL-2.0-or-later"></a>
 </p>
 
@@ -37,7 +37,7 @@ It runs on the `kubectl` and kubeconfig you already have, so whatever context an
 
 ## Install
 
-Needs GNOME Shell 45 to 50, `kubectl` installed, and a working kubeconfig. Both are auto-detected, snap and krew locations included; an unusual path goes under Advanced. Per-node CPU and memory bars need metrics-server in the cluster; nothing else depends on it.
+Needs GNOME Shell 45 to 51, `kubectl` installed, and a working kubeconfig. Both are auto-detected, snap and krew locations included; an unusual path goes under Advanced. Per-node CPU and memory figures need metrics-server in the cluster; nothing else depends on it.
 
 <p align="center">
   <a href="https://extensions.gnome.org/extension/10726/kube-node-monitor/">

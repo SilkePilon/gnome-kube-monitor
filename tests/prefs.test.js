@@ -115,7 +115,7 @@ test('rows carrying untrusted text disable Pango markup', async () => {
 test('the icon-only buttons carry tooltips, so they are not unlabelled to a reader', async () => {
     const {page} = await openPrefs({'kubeconfig-path': '/home/tester/a.yaml'});
     const add = rowByTitle(page, 'Add kubeconfig File…');
-    assert.equal(add.__suffixes[0].tooltip_text, 'Add a kubeconfig file');
+    assert.equal(add.__suffixes[0].tooltip_text, 'Add a kubeconfig File');
     const file = rowByTitle(page, 'a.yaml');
     assert.match(file.__suffixes[0].tooltip_text, /Remove a\.yaml/);
     // The status icons are labelled too.

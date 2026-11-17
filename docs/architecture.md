@@ -139,32 +139,27 @@ Two surfaces are probed, not one: the panel button and the menu box. A theme can
 
 | Role | Dark | on `#36363a` | Light | on `#fafafb` | Floor |
 | --- | --- | --- | --- | --- | --- |
-| `.kube-dur-up` | `#57e389` | 7.31 | `#007c3d` | 5.10 | 4.5 |
-| `.kube-dur-warn` | `#f5c211` | 7.22 | `#905400` | 5.83 | 4.5 |
-| `.kube-pods-warn` | `#e5a50a` | 5.57 | `#905400` | 5.83 | 4.5 |
-| `.kube-pods-err`, `.kube-dur-down`, `.kube-error-title` | `#ff7b72` | 4.77 | `#c30000` | 6.06 | 4.5 |
-| `.kube-dot-ok`, `.kube-meter-ok` | `#2ec27e` | 5.23 | `#007c3d` | 5.10 | 3 |
-| `.kube-dot-warning`, `.kube-meter-warning` | `#e5a50a` | 5.57 | `#905400` | 5.83 | 3 |
-| `.kube-dot-error`, `.kube-meter-error` | `#ff5c5c` | 3.97 | `#c30000` | 6.06 | 3 |
+| `.kube-text-warning` | `#f5c211` | 7.22 | `#905400` | 5.83 | 4.5 |
+| `.kube-text-error`, `.kube-error-title` | `#ff7b72` | 4.77 | `#c30000` | 6.06 | 4.5 |
+| `.kube-dot-ok` | `#2ec27e` | 5.23 | `#007c3d` | 5.10 | 3 |
+| `.kube-dot-warning` | `#e5a50a` | 5.57 | `#905400` | 5.83 | 3 |
+| `.kube-dot-error` | `#ff5c5c` | 3.97 | `#c30000` | 6.06 | 3 |
 | `.kube-dot`, `.kube-dot-unknown` | `#9a9996` | 4.22 | `#646360` | 5.76 | 3 |
 | focus ring | `rgba(120, 145, 255, .85)` | 3.45 | `rgba(4, 97, 190, .85)` | 4.37 | 3 |
 
 4.5:1 is the AA floor for text, 3:1 for a non-text indicator.
 
+The header's status circle needs no light twin. It is a filled background carrying its own foreground, libadwaita's success, warning and destructive pairs, so the popup behind it does not enter the ratio: white on `#26a269` is 3.25, 80% black on `#e5a50a` 7.28, white on `#c01c28` 6.11, all against the 3:1 floor for an icon.
+
 **St parses `opacity`, stores it, and never reads it back.** Verified on GNOME Shell 50.1 by loading this sheet in a headless shell: `max-width` from the same rule arrived, `actor.opacity` stayed at 255. So the dimmed half of the palette is written as colours, each one the blend that alpha would have produced: white over `#36363a`, Adwaita's `#241f31` over `#fafafb`.
 
 | Role | Dark | on `#36363a` | Light | on `#fafafb` | Floor |
 | --- | --- | --- | --- | --- | --- |
-| `.kube-caret` | `#909093` | 3.78 | `#7a7782` | 4.20 | 3 |
-| `.kube-context-empty` | `#9f9fa0` | 4.55 | `#75727e` | 4.51 | 4.5 |
-| `.kube-meter-label` | `#9f9fa0` | 4.55 | `#6f6c78` | 4.92 | 4.5 |
 | `.kube-error-detail`, `.kube-error-strip` | `#a5a5a6` | 4.89 | `#64616e` | 5.79 | 4.5 |
-| `.kube-pods-ok` | `#afafb0` | 5.49 | `#64616e` | 5.79 | 4.5 |
 | `.kube-time` | `#b9b9ba` | 6.14 | `#5a5664` | 6.82 | 4.5 |
-| `.kube-node-qual` | `#c3c3c4` | 6.83 | `#4f4b59` | 8.11 | 4.5 |
-| `.kube-meter-value` | `#cdcdce` | 7.57 | `#4f4b59` | 8.11 | 4.5 |
+| `.kube-node-qual`, `.kube-node-load`, `.kube-node-duration`, `.kube-pods-label`, `.kube-dim` | `#c3c3c4` | 6.83 | `#4f4b59` | 8.11 | 4.5 |
 
-Writing the blend out found two rows that had been under the floor all along. `.kube-context-empty` and `.kube-meter-label` both sat near 3.8 on the dark popup at the alpha they carried, so both are clamped to the AA floor here, which is why they share a value. The caret is an icon and keeps the 3:1 floor.
+The secondary line of a node row is set at 0.818em, gnome-shell's own subtitle size, so it takes the strongest dim step rather than a fainter one.
 
 The light values are not new hues. They are the dark palette's own, put through libadwaita's standalone rule for light themes, `oklab(from <colour> min(l, 0.5) a b)`, because Adwaita holds nothing green or amber dark enough to carry text on `#fafafb`. Dimmed rows had to be pushed further too, and that is the half that reads as washed out rather than as the wrong colour: dark text loses more contrast per step than white text gains, so a half-strength blend reaches 4.28 on the dark popup and only 3.17 on the light one.
 
@@ -176,7 +171,7 @@ The light values are not new hues. They are the dark palette's own, put through 
   </picture>
 </p>
 
-Neutral greys are exempt from all of it. `rgba(128, 128, 128, …)` on the hovers, the focus fill and the meter track reads the same either way, which is what makes it the right way to write a hover in the first place.
+Neutral greys are exempt from all of it. `rgba(128, 128, 128, …)` on the hovers, the focus fill and the unknown status circle reads the same either way, which is what makes it the right way to write a hover in the first place.
 
 Timing has two traps. `get_theme_node()` logs a critical for a widget outside the stage, and the panel adopts the button only after `_init` returns, so the first read borrows `Main.panel`'s node. And both `style-changed` handlers are disconnected in `destroy()` before the actors are unparented, because unparenting restyles and the handler would then read a node that has left the stage.
 

@@ -13,220 +13,111 @@
     border-radius: 6px;
 }
 
-/* Menu header. min-width widens the whole popup, not just this row, so node
-   rows and meters have room. */
+/* Menu header, after gnome-shell's Quick Settings menu header. min-width sets
+   the width of the whole popup, so every other row is laid out against it. */
 .kube-header {
-    spacing: 8px;
+    spacing: 12px;
     min-width: 340px;
+    padding-bottom: 12px;
+}
+
+/* The helm in a circle, filled per level with libadwaita's own background and
+   foreground pairs, which hold their contrast on light and dark alike. */
+.kube-status-icon {
+    icon-size: 20px;
+    padding: 8px;
+    border-radius: 999px;
+    background-color: rgba(128, 128, 128, 0.3);
+}
+
+.kube-status-ok {
+    background-color: #26a269;
+    color: #ffffff;
+}
+
+.kube-status-warning {
+    background-color: #e5a50a;
+    color: rgba(0, 0, 0, 0.8);
+}
+
+.kube-status-error {
+    background-color: #c01c28;
+    color: #ffffff;
 }
 
 .kube-title {
-    font-weight: 600;
-    font-size: 1.05em;
-    max-width: 240px;
+    font-weight: 700;
+    font-size: 1.091em;
+    max-width: 210px;
+}
+
+.kube-subtitle {
+    font-size: 0.818em;
+    font-weight: 700;
+    max-width: 200px;
 }
 
 .kube-time {
-    font-size: 0.8em;
+    font-size: 0.818em;
     color: #b9b9ba;
 }
 
-.kube-context-button {
-    padding: 2px 8px;
-    border-radius: 8px;
-}
-
-.kube-context-button:hover {
-    background-color: rgba(128, 128, 128, 0.22);
-}
-
-/* Direction-sensitive spacing. St's CSS subset has no logical properties, and
-   StBoxLayout reverses its children under RTL, so a margin that clears a
-   neighbour must be stated for both directions or it lands on the wrong side. */
-.kube-caret {
-    color: #909093;
-}
-
-.kube-caret:ltr {
-    margin-left: 6px;
-}
-
-.kube-caret:rtl {
-    margin-right: 6px;
-}
-
 .kube-icon-button {
-    padding: 5px;
-    border-radius: 8px;
+    padding: 6px;
+    border-radius: 999px;
 }
 
 .kube-icon-button:hover {
     background-color: rgba(128, 128, 128, 0.22);
 }
 
-/* Collapsible context list (buttons that keep the menu open) */
-.kube-context-list {
-    padding-top: 2px;
-    padding-bottom: 2px;
+/* Focus ring. The shell's popup-menu-item:focus never reaches a button inside
+   an item. Inset box-shadow, since an outline is clipped by the menu. */
+.kube-icon-button:focus {
+    background-color: rgba(128, 128, 128, 0.3);
+    box-shadow: inset 0 0 0 2px rgba(120, 145, 255, 0.85);
 }
 
-/* No explicit colour: inherit the theme's foreground. A hardcoded #ffffff makes
-   these rows white-on-white under GNOME's Light style. */
-.kube-context-row {
-    padding: 5px 8px;
-    border-radius: 8px;
-}
-
-/* The rows highlight, the list around them does not: indicator.js clears the
-   container's track_hover so the fill marks the row under the pointer. */
-.kube-context-row:hover {
-    background-color: rgba(128, 128, 128, 0.22);
-}
-
-.kube-context-icon:ltr {
-    margin-right: 10px;
-}
-
-.kube-context-icon:rtl {
-    margin-left: 10px;
-}
-
-.kube-context-empty {
-    padding: 5px 8px;
-    color: #9f9fa0;
-}
-
-/* Pods summary. max-width stops a longer locale stretching the popup past the
-   header's 340px; the labels ellipsize (indicator.js), so overflow trims. */
-.kube-pods {
-    spacing: 14px;
-    font-size: 1.05em;
-    max-width: 320px;
-}
-
-.kube-pods-ok {
-    color: #afafb0;
-}
-
-.kube-pods-warn {
-    color: #e5a50a;
-}
-
-.kube-pods-err {
-    color: #ff7b72;
-    font-weight: 600;
-}
-
-/* Node rows: dot + name + qualifier + duration on top, meters beneath */
-.kube-node-item {
-    padding-top: 9px;
-    padding-bottom: 9px;
-}
-
+/* Node rows: dot, name and up/down time, then a dim line of role and load. */
 .kube-node-box {
-    spacing: 6px;
+    spacing: 2px;
 }
 
 .kube-node-top {
     spacing: 10px;
 }
 
-.kube-node-name {
-    font-weight: 500;
-    font-size: 1.02em;
-}
-
-/* Carries the failure reason, so it stays above the 4.5:1 AA floor. */
-.kube-node-qual {
-    font-size: 0.85em;
+.kube-node-duration,
+.kube-node-qual,
+.kube-node-load,
+.kube-pods-label {
+    font-size: 0.818em;
     color: #c3c3c4;
 }
 
-.kube-node-duration {
-    font-size: 0.85em;
-    font-weight: 600;
+/* Lines the secondary text up under the name: the dot's 9px plus the 10px
+   spacing. StBoxLayout mirrors under RTL, so the indent must too. */
+.kube-node-sub:ltr {
+    margin-left: 19px;
 }
 
-.kube-dur-up {
-    color: #57e389;
+.kube-node-sub:rtl {
+    margin-right: 19px;
 }
 
-.kube-dur-warn {
+.kube-dim {
+    color: #c3c3c4;
+}
+
+/* State colours for text: a reason, a high load, a down node, problem pods. */
+.kube-text-warning {
     color: #f5c211;
 }
 
-.kube-dur-down {
+/* Lightened from #e01b24, which gives ~2.5:1 against a dark popup. */
+.kube-text-error {
     color: #ff7b72;
-}
-
-/* Per-node CPU/MEM meters. The min-widths below keep the columns aligned across
-   rows; .kube-meter-track width must match METER_WIDTH in indicator.js. */
-.kube-node-meters {
-    spacing: 22px;
-    margin-top: 2px;
-}
-
-/* Indents the meters under the node name, which mirrors with the row. */
-.kube-node-meters:ltr {
-    margin-left: 20px;
-}
-
-.kube-node-meters:rtl {
-    margin-right: 20px;
-}
-
-.kube-meter {
-    spacing: 8px;
-}
-
-.kube-meter-label {
-    font-size: 0.82em;
-    font-weight: 600;
-    color: #9f9fa0;
-    min-width: 30px;
-}
-
-/* Mid-grey rather than a white wash, so the track shows on both the dark and
-   light popup backgrounds. */
-.kube-meter-track {
-    width: 64px;
-    height: 7px;
-    border-radius: 4px;
-    background-color: rgba(128, 128, 128, 0.35);
-}
-
-.kube-meter-fill {
-    height: 7px;
-    border-radius: 4px;
-    background-color: rgba(128, 128, 128, 0.7);
-}
-
-.kube-meter-fill.kube-meter-ok {
-    background-color: #2ec27e;
-}
-
-.kube-meter-fill.kube-meter-warning {
-    background-color: #e5a50a;
-}
-
-.kube-meter-fill.kube-meter-error {
-    background-color: #ff5c5c;
-}
-
-/* Focus rings. The shell's popup-menu-item:focus never reaches these custom
-   classes, so without them keyboard focus is invisible (WCAG 2.4.7). Inset
-   box-shadow, not outline: outline draws outside the allocation and gets clipped in a menu. */
-.kube-context-button:focus,
-.kube-icon-button:focus,
-.kube-context-row:focus {
-    background-color: rgba(128, 128, 128, 0.3);
-    box-shadow: inset 0 0 0 2px rgba(120, 145, 255, 0.85);
-}
-
-.kube-meter-value {
-    font-size: 0.85em;
-    color: #cdcdce;
-    min-width: 36px;
+    font-weight: 700;
 }
 
 /* Status dots (panel corner + node rows) */
@@ -288,19 +179,6 @@
 
 /* Dark text loses more contrast per step of dimming, so each row is blended
    further from the surface than its dark twin to land on the same footing. */
-.kube-light .kube-caret {
-    color: #7a7782;
-}
-
-.kube-light .kube-context-empty {
-    color: #75727e;
-}
-
-.kube-light .kube-meter-label {
-    color: #6f6c78;
-}
-
-.kube-light .kube-pods-ok,
 .kube-light .kube-error-detail,
 .kube-light .kube-error-strip {
     color: #64616e;
@@ -310,24 +188,21 @@
     color: #5a5664;
 }
 
+.kube-light .kube-node-duration,
 .kube-light .kube-node-qual,
-.kube-light .kube-meter-value {
+.kube-light .kube-node-load,
+.kube-light .kube-pods-label,
+.kube-light .kube-dim {
     color: #4f4b59;
 }
 
-/* The dark palette's greens and ambers cannot carry text here: they were picked
-   against #36363a and reach 1.6:1 on a light popup. */
-.kube-light .kube-dur-up {
-    color: #007c3d;
-}
-
-.kube-light .kube-pods-warn,
-.kube-light .kube-dur-warn {
+/* The dark palette's ambers and reds cannot carry text here: they were picked
+   against #36363a and fall well short of 4.5:1 on a light popup. */
+.kube-light .kube-text-warning {
     color: #905400;
 }
 
-.kube-light .kube-pods-err,
-.kube-light .kube-dur-down,
+.kube-light .kube-text-error,
 .kube-light .kube-error-title {
     color: #c30000;
 }
@@ -339,23 +214,18 @@
     background-color: #646360;
 }
 
-.kube-light .kube-dot-ok,
-.kube-light .kube-meter-fill.kube-meter-ok {
+.kube-light .kube-dot-ok {
     background-color: #007c3d;
 }
 
-.kube-light .kube-dot-warning,
-.kube-light .kube-meter-fill.kube-meter-warning {
+.kube-light .kube-dot-warning {
     background-color: #905400;
 }
 
-.kube-light .kube-dot-error,
-.kube-light .kube-meter-fill.kube-meter-error {
+.kube-light .kube-dot-error {
     background-color: #c30000;
 }
 
-.kube-light .kube-context-button:focus,
-.kube-light .kube-icon-button:focus,
-.kube-light .kube-context-row:focus {
+.kube-light .kube-icon-button:focus {
     box-shadow: inset 0 0 0 2px rgba(4, 97, 190, 0.85);
 }

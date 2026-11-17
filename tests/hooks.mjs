@@ -21,6 +21,7 @@ const shellDir = join(here, 'stubs', 'shell');
 
 // resource:/// path tail -> stub file. Extend as more shell modules get used.
 const SHELL_STUBS = {
+    'misc/config.js': 'config.js',
     'ui/main.js': 'main.js',
     'ui/panelMenu.js': 'panelMenu.js',
     'ui/popupMenu.js': 'popupMenu.js',

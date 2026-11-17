@@ -415,7 +415,7 @@ test('the mute state is pushed into the menu on enable and on change', async () 
 
     settings.set_int64('alert-silence-until', 0);
     await settle();
-    assert.equal(indicator._muteItem.label.text, 'Mute alerts', 'and kept in step after');
+    assert.equal(indicator._muteItem.label.text, 'Mute Alerts', 'and kept in step after');
     ext.disable();
 });
 
@@ -459,7 +459,7 @@ test('the context switcher is populated, resolving the current context when unse
     });
     ext.enable();
     await settle();
-    const list = Main.panel.statusArea['kube-monitor@cerobreath.dev']._contextList;
+    const list = Main.panel.statusArea['kube-monitor@cerobreath.dev']._contextMenu.menu;
     const texts = list.get_children().map(c => c.__allText().join(' '));
     assert.ok(texts.some(t => t.includes('auto-ctx')));
     assert.ok(texts.some(t => t.includes('other')));
@@ -647,12 +647,12 @@ test('a context lookup cancelled mid-flight does not list contexts', async () =>
     ext.enable();
     await settle();
     const indicator = Main.panel.statusArea['kube-monitor@cerobreath.dev'];
-    const before = indicator._contextList.get_children().length;
+    const before = indicator._contextMenu.menu.get_children().length;
 
     ext._cancellable.cancel();            // e.g. teardown began
     Gio.__release();                      // the lookup lands afterwards
     await settle();
-    assert.equal(indicator._contextList.get_children().length, before,
+    assert.equal(indicator._contextMenu.menu.get_children().length, before,
         'a cancelled lookup must not repopulate the switcher');
     ext.disable();
 });
@@ -689,7 +689,7 @@ test('a bound locale reaches the view, the pure alert machine and the banners', 
     // modules. Ukrainian also proves nothing assumes English's two plural forms.
     const catalog = {
         'critical': 'критичний',
-        'Mute alerts': 'Вимкнути сповіщення',
+        'Mute Alerts': 'Вимкнути сповіщення',
         '%s is down': '%s не відповідає',
         '%1$s, %2$d of %3$d node ready': [
             '%1$s, %2$d з %3$d вузла готовий',

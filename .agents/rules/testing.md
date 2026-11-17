@@ -5,7 +5,7 @@ paths:
 
 # Test harness
 
-340 tests across 14 files, no dependencies, no cluster, no gnome-shell. Every shipped file
+350 tests across 14 files, no dependencies, no cluster, no gnome-shell. Every shipped file
 is held at 100% line, branch and function coverage by `npm run coverage`, which is part of
 `npm run check` and its own CI job.
 

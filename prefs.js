@@ -204,7 +204,7 @@ export default class KubeMonitorPreferences extends ExtensionPreferences {
         const addBtn = new Gtk.Button({
             icon_name: 'list-add-symbolic', valign: Gtk.Align.CENTER, css_classes: ['flat'],
             // Icon-only: without this a screen reader announces "button".
-            tooltip_text: _('Add a kubeconfig file'),
+            tooltip_text: _('Add a kubeconfig File'),
         });
         addRow.add_suffix(addBtn);
         addRow.activatable_widget = addBtn;

@@ -19,15 +19,19 @@ shipped bugs. Each rule below exists because something broke.
   light), which the item then inherits down to live buttons inside it. For a container
   holding working controls use `{reactive: true, activate: false, hover: false}`:
   `_activatable` is `reactive && activate`, so it still matches plain
-  `.popup-inactive-menu-item` while its click gesture stays unwired. `_contextItem` does
+  `.popup-inactive-menu-item` while its click gesture stays unwired. The menu header does
   this and a test pins it.
 - **Never fix a colour problem by naming a colour.** A hardcoded `#ffffff` here is the
   regression that once made rows white-on-white under the Light style.
 - **`reactive: true` also turns on `track_hover`**, which lets the theme paint
   `.popup-menu-item:hover` across a whole container. Hover must mark the row under the
-  pointer, not the block around it, so `_contextItem` clears `track_hover` while the rows
-  inside keep `.kube-context-row:hover`. Removing a per-row fill leaves that control with
+  pointer, not the block around it, so the header clears `track_hover` while the refresh
+  button inside keeps `.kube-icon-button:hover`. Removing that fill leaves the control with
   no mouse affordance, which is not a tidy-up.
+- **Prefer the shell's own menu parts to hand-built ones.** The context switcher is a
+  `PopupSubMenuMenuItem` whose rows carry `Ornament.CHECK`/`NONE`, which brings keyboard
+  navigation, the CHECKED accessible state and the theme's look for free. A custom list of
+  St.Buttons needed all three written and tested by hand, and still looked foreign.
 - Beating a shell-theme rule takes **specificity, not load order**:
   `.popup-menu-item:hover, :selected, :checked` is one rule at (0,2,0), so a single-class
   override only ties.
@@ -79,8 +83,9 @@ shipped bugs. Each rule below exists because something broke.
 - **Stable width**: the menu width is `.kube-header`'s `min-width`. St clamps an actor's
   preferred width to its CSS `max-width`, so a `max-width` plus `line_wrap` label reflows
   instead of widening the popup. Never let unbounded text into the menu.
-- Status colour is class-based (`kube-dot-<level>`, `kube-meter-<level>`, level in
-  `ok|warning|error|unknown`), not inline. The one exception is the panel logo:
+- Status colour is class-based (`kube-dot-<level>`, `kube-status-<level>`,
+  `kube-text-<level>`, level in `ok|warning|error|unknown`), not inline, and swapped
+  through `setLevelClass()`. The one exception is the panel logo:
   `_syncPanelStyle()` pins it to the surface's own foreground and re-runs on
   `style-changed` so it tracks light and dark themes.
 - The "updated N ago" label uses `GLib.get_monotonic_time()`, immune to wall-clock jumps.
