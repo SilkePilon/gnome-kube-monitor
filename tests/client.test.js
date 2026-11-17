@@ -71,6 +71,7 @@ test('argv: each fetch asks for the narrow projection it needs', async () => {
     await fetchPodsSummary(opts(), null);
     argv = Gio.__lastCall().argv;
     assert.ok(argv.includes('-A'), 'pods summary is cluster-wide');
+    assert.match(argv.at(-1) ?? '', /initContainerStatuses/, 'a crashing init container counts');
 
     reset();
     respond('ctx-a\n');
@@ -126,6 +127,8 @@ test('environ: PATH is extended (appended, never prepended) and DISPLAY is strip
     assert.ok(!env.some(e => e.startsWith('DISPLAY=')), 'DISPLAY must be unset');
     assert.ok(!env.some(e => e.startsWith('WAYLAND_DISPLAY=')), 'WAYLAND_DISPLAY must be unset');
     assert.ok(env.includes('BROWSER=true'), 'BROWSER neutralised');
+    // A kuberc default such as show-kind would rename every row of the table.
+    assert.ok(env.includes('KUBERC=off'), 'kuberc preferences ignored');
 });
 
 test('environ: KUBECONFIG is set only when a path is configured', async () => {
