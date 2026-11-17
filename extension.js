@@ -100,7 +100,9 @@ export default class KubeMonitorExtension extends Extension {
         this._netMonitor = Gio.NetworkMonitor.get_default();
         // The monitor outlives every enable cycle, so this handler must survive
         // firing before the poller exists or after teardown dropped it.
-        this._netChangedId = this._netMonitor.connect('network-changed',
+        // @girs 51 types an interface's connect() against its prerequisite's
+        // signals, so the monitor's own signal needs the cast.
+        this._netChangedId = /** @type {any} */ (this._netMonitor).connect('network-changed',
             (/** @type {unknown} */ _m, /** @type {boolean} */ available) => {
                 if (available)
                     this._poller?.refreshNow(true);
